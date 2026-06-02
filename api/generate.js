@@ -200,9 +200,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Resume and job description are required." });
     }
 
-    const response = await client.responses.create({
+    const response = await client.chat.completions.create({
       model: process.env.OPENAI_MODEL || "gpt-4o-2024-08-06",
-      input: [
+      messages: [
         {
           role: "system",
           content: [
@@ -240,9 +240,9 @@ export default async function handler(req, res) {
           })
         }
       ],
-      text: {
-        format: {
-          type: "json_schema",
+      response_format: {
+        type: "json_schema",
+        json_schema: {
           name: "tailored_resume_package",
           strict: true,
           schema
@@ -250,7 +250,10 @@ export default async function handler(req, res) {
       }
     });
 
-    const text = response.output_text;
+    const text = response.choices?.[0]?.message?.content;
+    if (!text) {
+      throw new Error("OpenAI returned an empty response.");
+    }
     const parsed = JSON.parse(text);
     return res.status(200).json(parsed);
   } catch (error) {

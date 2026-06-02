@@ -329,13 +329,13 @@ async function generate() {
 
     const payload = await response.json();
     if (!response.ok) {
-      throw new Error(payload.error || "Generation failed");
+      throw new Error(payload.detail || payload.error || "Generation failed");
     }
 
     generated.model = payload;
     resetApprovals();
   } catch (error) {
-    showToast(error.message || "AI generation failed. Check OPENAI_API_KEY.");
+    showToast(error.message || "AI generation failed.");
     return;
   } finally {
     setGenerating(false);
