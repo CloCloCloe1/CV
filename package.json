@@ -1,0 +1,17 @@
+{
+  "name": "clarity-cv",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "dev:vercel": "vercel dev --listen 4174",
+    "check": "node --check script.js && node --check api/generate.js"
+  },
+  "dependencies": {
+    "openai": "^4.104.0"
+  },
+  "devDependencies": {
+    "vercel": "^34.3.0"
+  }
+}

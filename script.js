@@ -266,54 +266,15 @@ function compactExperience(resume, keywords) {
   return ordered.slice(0, 18);
 }
 
-function makeModel() {
-  const resume = fields.resume.value.trim();
-  const jd = fields.jd.value.trim();
-  const company = fields.company.value.trim() || "Target Company";
-  const role = fields.role.value.trim() || "Target Role";
-  const keywords = topKeywords(jd, 18);
-  const name = fields.name.value.trim() || "Your Name";
-  const contact = [fields.phone.value.trim(), activeEmail(), fields.linkedin.value.trim(), fields.location.value.trim()].filter(Boolean).join(" | ");
-
-  const summary = [
-    `${role}-aligned candidate with hands-on experience across product analysis, business systems, data synthesis, stakeholder coordination, and operational improvement.`,
-    `Positioned for ${company} with emphasis on ${keywords.slice(0, 6).join(", ") || "product judgment, structured execution, and measurable business impact"}.`,
-    "Brings a practical style: clarify requirements, connect evidence to decisions, coordinate cross-functional delivery, and communicate recommendations clearly."
-  ].join(" ");
-
-  const skills = [
-    ...new Set([
-      ...keywords.slice(0, 10).map((word) => word.replace(/\b\w/g, (char) => char.toUpperCase())),
-      "Product Requirements",
-      "Business Case Support",
-      "Stakeholder Management",
-      "Data Analysis",
-      "Agile Delivery",
-      "Jira",
-      "Excel",
-      "Tableau",
-      "Power BI"
-    ])
-  ].slice(0, 18);
-
-  return {
-    name,
-    contact,
-    company,
-    role,
-    summary,
-    experience: compactExperience(resume, keywords),
-    education: sectionText(resume, ["EDUCATION"]).split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(0, 5),
-    skills,
-    keywords
-  };
-}
-
 function modelToText(model) {
-  const exp = model.experience.map((item) => item.type === "bullet" ? `- ${item.text}` : item.text).join("\n");
+  const exp = model.experience.map((item) => {
+    const head = `${item.organization}${item.location ? `, ${item.location}` : ""}${item.dates ? ` | ${item.dates}` : ""}\n${item.title}`;
+    return `${head}\n${item.bullets.map((bullet) => `- ${bullet}`).join("\n")}`;
+  }).join("\n\n");
+  const skills = model.skills.map((group) => `${group.label}: ${group.items.join(", ")}`).join("\n");
   const edu = model.education.length ? model.education.join("\n") : "Education details from saved resume";
-  return `${model.name}
-${model.contact}
+  return `${model.candidateName}
+${model.contactLine}
 
 PROFESSIONAL SUMMARY
 ${model.summary}
@@ -325,23 +286,10 @@ EDUCATION
 ${edu}
 
 SKILLS
-${model.skills.join(", ")}`;
+${skills}`;
 }
 
-function makeCoverLetter(model) {
-  return `Dear ${model.company} Hiring Team,
-
-I am excited to apply for the ${model.role} position. My background combines product-focused analysis, business systems work, stakeholder communication, and data-driven execution, which aligns closely with the priorities described in the role.
-
-Across my experience, I have translated ambiguous business needs into clearer requirements, supported Agile delivery, built reporting that improved decision-making, and coordinated with cross-functional partners to move work from analysis into implementation. The strongest overlap with this opportunity is around ${model.keywords.slice(0, 6).join(", ") || "product strategy, business analysis, and measurable impact"}.
-
-I would bring a practical, organized, and evidence-based working style to ${model.company}: understand the problem, synthesize the data, align stakeholders, and communicate recommendations that help teams act.
-
-Sincerely,
-${model.name}`;
-}
-
-function generate() {
+async function generate() {
   if (!fields.resume.value.trim()) {
     showToast("请先在 Profile 页面保存或输入简历母版。");
     switchView("profile");
@@ -353,9 +301,42 @@ function generate() {
     return;
   }
 
-  generated.model = makeModel();
+  setGenerating(true);
+  try {
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        profile: {
+          name: fields.name.value.trim(),
+          email: activeEmail(),
+          phone: fields.phone.value.trim(),
+          linkedin: fields.linkedin.value.trim(),
+          location: fields.location.value.trim()
+        },
+        resume: fields.resume.value.trim(),
+        company: fields.company.value.trim(),
+        role: fields.role.value.trim(),
+        jobDescription: fields.jd.value.trim(),
+        questions: fields.questions.value.trim()
+      })
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.error || "Generation failed");
+    }
+
+    generated.model = payload;
+  } catch (error) {
+    showToast(error.message || "AI generation failed. Check OPENAI_API_KEY.");
+    return;
+  } finally {
+    setGenerating(false);
+  }
+
   generated.resumeText = modelToText(generated.model);
-  generated.coverText = makeCoverLetter(generated.model);
+  generated.coverText = generated.model.coverLetter;
   $("#resumeOutput").textContent = generated.resumeText;
   $("#letterOutput").textContent = generated.coverText;
   $("#resumeOutput").classList.remove("empty");
@@ -363,7 +344,13 @@ function generate() {
   $("#resumeStatus").textContent = "Generated";
   $("#coverStatus").textContent = "Generated";
   switchView("documents");
-  showToast("Generated. You can download Word documents now.");
+  showToast("AI tailored documents generated. You can download Word files now.");
+}
+
+function setGenerating(isGenerating) {
+  const button = $("#generateBtn");
+  button.disabled = isGenerating;
+  button.querySelector("span").textContent = isGenerating ? "Generating..." : "Generate";
 }
 
 function downloadBlob(blob, filename) {
@@ -382,31 +369,35 @@ function fileSafeName(value) {
 }
 
 async function downloadResumeDoc() {
-  if (!generated.model) generate();
+  if (!generated.model) await generate();
   if (!generated.model) return;
-  const name = fileSafeName(`${generated.model.name}_${generated.model.company}_${generated.model.role}_CV`);
+  const name = fileSafeName(`${generated.model.candidateName}_${fields.company.value || "Company"}_${fields.role.value || "Role"}_CV`);
   await downloadDocxResume(generated.model, `${name}.docx`);
 }
 
 async function downloadCoverDoc() {
-  if (!generated.model) generate();
+  if (!generated.model) await generate();
   if (!generated.model) return;
-  const name = fileSafeName(`${generated.model.name}_${generated.model.company}_${generated.model.role}_Cover_Letter`);
+  const name = fileSafeName(`${generated.model.candidateName}_${fields.company.value || "Company"}_${fields.role.value || "Role"}_Cover_Letter`);
   await downloadDocxCover(generated.model, generated.coverText, `${name}.docx`);
 }
 
 async function downloadDocxResume(model, filename) {
   const paragraphs = [
-    { text: model.name, align: "center", bold: true, size: 32, after: 20 },
-    { text: model.contact, align: "center", size: 18, after: 120 },
+    { text: model.candidateName, align: "center", bold: true, size: 32, after: 20 },
+    { text: model.contactLine, align: "center", size: 18, after: 120 },
     { text: "PROFESSIONAL SUMMARY", heading: true },
     { text: model.summary, size: 18, after: 35 },
     { text: "PROFESSIONAL EXPERIENCE", heading: true }
   ];
 
   model.experience.forEach((item) => {
-    if (item.type === "header") paragraphs.push({ text: item.text, bold: true, size: 18, after: 8 });
-    else paragraphs.push({ text: item.text, bullet: true, size: 17, after: 8 });
+    const header = `${item.organization}${item.location ? `, ${item.location}` : ""}${item.dates ? ` | ${item.dates}` : ""}`;
+    paragraphs.push({ text: header, bold: false, size: 18, after: 0 });
+    paragraphs.push({ text: item.title, bold: true, size: 18, after: 6 });
+    item.bullets.forEach((bullet) => {
+      paragraphs.push({ text: bullet, bullet: true, size: 17, after: 8 });
+    });
   });
 
   paragraphs.push({ text: "EDUCATION", heading: true });
@@ -414,7 +405,9 @@ async function downloadDocxResume(model, filename) {
     paragraphs.push({ text: line, bold: /Master|Bachelor|University|College/i.test(line), size: 17, after: 6 });
   });
   paragraphs.push({ text: "SKILLS", heading: true });
-  paragraphs.push({ text: model.skills.join(", "), size: 17, after: 0 });
+  model.skills.forEach((group) => {
+    paragraphs.push({ text: `${group.label}: ${group.items.join(", ")}`, size: 17, after: 6, bold: false });
+  });
 
   const blob = await buildDocxBlob(paragraphs, { compact: true });
   downloadBlob(blob, filename);

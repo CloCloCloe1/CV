@@ -11,4 +11,14 @@ Users can:
 - Generate a tailored one-page CV
 - Download the CV and cover letter as Word `.docx` documents
 
-This version is a static prototype. User profiles are stored locally in the browser with `localStorage`.
+This app uses a Vercel serverless API route to call OpenAI securely.
+
+## Local development
+
+1. Copy `.env.example` to `.env`
+2. Add `OPENAI_API_KEY`
+3. Run `npm install`
+4. Run `npm run dev`
+5. Open `http://localhost:4174`
+
+User profiles are stored locally in the browser with `localStorage`. OpenAI API keys must stay on the server/Vercel side and should never be placed in frontend code.
