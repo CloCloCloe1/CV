@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clarity CV</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <section class="login-screen" id="loginScreen">
+      <div class="login-card">
+        <div class="wordmark">Clarity CV</div>
+        <h1>Tailored resumes, saved profiles, one-page Word documents.</h1>
+        <p>第一次输入你的基本信息和简历母版。之后每次申请，只需要粘贴岗位描述并下载新的 Word 简历。</p>
+
+        <div class="login-fields">
+          <label>
+            <span>Email</span>
+            <input id="loginEmailInput" type="email" placeholder="you@example.com" autocomplete="email" />
+          </label>
+          <label>
+            <span>Name</span>
+            <input id="loginNameInput" type="text" placeholder="Chloe Li" autocomplete="name" />
+          </label>
+        </div>
+
+        <button class="primary-button wide" id="loginSubmitBtn" type="button">
+          <span>Continue</span>
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </div>
+    </section>
+
+    <div class="app-shell hidden" id="appShell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">C</div>
+          <div>
+            <div class="brand-name">Clarity CV</div>
+            <div class="brand-subtitle" id="currentUserEmail">Signed in</div>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Main">
+          <button class="nav-item active" type="button" data-view="profile">
+            <i data-lucide="user-round"></i>
+            <span>Profile</span>
+          </button>
+          <button class="nav-item" type="button" data-view="role">
+            <i data-lucide="briefcase-business"></i>
+            <span>Target Role</span>
+          </button>
+          <button class="nav-item" type="button" data-view="documents">
+            <i data-lucide="file-down"></i>
+            <span>Documents</span>
+          </button>
+        </nav>
+
+        <button class="logout-button" id="logoutBtn" type="button">
+          <i data-lucide="log-out"></i>
+          <span>Logout</span>
+        </button>
+      </aside>
+
+      <main class="main">
+        <section class="view active" id="profileView">
+          <header class="page-head">
+            <div>
+              <p class="eyebrow">Saved profile</p>
+              <h1>Your resume foundation</h1>
+              <p>保存一次基础简历和核心信息。后续可以回来更新，所有岗位生成都会使用最新母版。</p>
+            </div>
+            <button class="primary-button" id="saveProfileBtn" type="button">
+              <i data-lucide="save"></i>
+              <span>Save Profile</span>
+            </button>
+          </header>
+
+          <div class="content-panel">
+            <div class="field-grid">
+              <label>
+                <span>Full name</span>
+                <input id="candidateNameInput" type="text" placeholder="Chloe Li" />
+              </label>
+              <label>
+                <span>Location</span>
+                <input id="locationInput" type="text" placeholder="Toronto, ON" />
+              </label>
+              <label>
+                <span>Phone</span>
+                <input id="phoneInput" type="text" placeholder="+1 437 661 2745" />
+              </label>
+              <label>
+                <span>LinkedIn</span>
+                <input id="linkedinInput" type="text" placeholder="linkedin.com/in/..." />
+              </label>
+            </div>
+
+            <div class="resume-row">
+              <div>
+                <h2>Resume master copy</h2>
+                <p>支持粘贴文本，也可以上传 PDF / TXT / Markdown。PDF 会提取文字，最终生成新的 Word 文档。</p>
+              </div>
+              <label class="file-control">
+                <i data-lucide="upload"></i>
+                <span>Upload</span>
+                <input id="resumeFile" type="file" accept=".pdf,.txt,.md,.text" />
+              </label>
+            </div>
+
+            <textarea id="resumeInput" class="text-input resume-box" placeholder="Paste your current one-page resume here..."></textarea>
+          </div>
+        </section>
+
+        <section class="view" id="roleView">
+          <header class="page-head">
+            <div>
+              <p class="eyebrow">Application</p>
+              <h1>Target role details</h1>
+              <p>每个岗位只需要更新这里。系统会基于你的简历母版生成一页 Word 简历和可选 cover letter。</p>
+            </div>
+            <button class="primary-button" id="generateBtn" type="button">
+              <i data-lucide="wand-sparkles"></i>
+              <span>Generate</span>
+            </button>
+          </header>
+
+          <div class="content-panel">
+            <div class="field-grid">
+              <label>
+                <span>Company</span>
+                <input id="companyInput" type="text" placeholder="Tata Consultancy Services" />
+              </label>
+              <label>
+                <span>Role</span>
+                <input id="roleInput" type="text" placeholder="Product Management Specialist" />
+              </label>
+            </div>
+
+            <label class="stacked-label">
+              <span>Job description</span>
+              <textarea id="jdInput" class="text-input jd-box" placeholder="Paste responsibilities, requirements, and required skills..."></textarea>
+            </label>
+
+            <label class="stacked-label">
+              <span>Optional application questions</span>
+              <textarea id="questionsInput" class="text-input question-box" placeholder="Why are you interested in this company?&#10;Tell us about a time you worked with cross-functional teams."></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="view" id="documentsView">
+          <header class="page-head">
+            <div>
+              <p class="eyebrow">Ready to submit</p>
+              <h1>Download Word documents</h1>
+              <p>生成后可以下载一页 CV，也可以下载 cover letter。所有内容仍建议投递前做最后人工检查。</p>
+            </div>
+            <div class="download-actions">
+              <button class="primary-button" id="downloadResumeBtn" type="button">
+                <i data-lucide="file-down"></i>
+                <span>Download CV</span>
+              </button>
+              <button class="secondary-button" id="downloadCoverBtn" type="button">
+                <i data-lucide="mail-check"></i>
+                <span>Download Cover Letter</span>
+              </button>
+            </div>
+          </header>
+
+          <div class="document-grid">
+            <article class="preview-panel">
+              <div class="preview-head">
+                <h2>One-page CV</h2>
+                <span id="resumeStatus">Not generated</span>
+              </div>
+              <pre id="resumeOutput" class="document-preview empty">Go to Target Role and click Generate.</pre>
+            </article>
+
+            <article class="preview-panel">
+              <div class="preview-head">
+                <h2>Cover letter</h2>
+                <span id="coverStatus">Optional</span>
+              </div>
+              <pre id="letterOutput" class="document-preview empty">Cover letter will appear here after generation.</pre>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="./vendor/pdf.min.js"></script>
+    <script src="./vendor/jszip.min.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>
