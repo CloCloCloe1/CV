@@ -13,6 +13,7 @@ const schema = {
     "skills",
     "coverLetter",
     "answers",
+    "review",
     "truthCheckNotes",
     "fitScore"
   ],
@@ -82,6 +83,63 @@ const schema = {
       },
       minItems: 0,
       maxItems: 8
+    },
+    review: {
+      type: "object",
+      additionalProperties: false,
+      required: ["structureChanges", "experienceToSupplement", "skillUpdates"],
+      properties: {
+        structureChanges: {
+          type: "array",
+          description: "Major suggestions to delete, merge, shorten, or reorder content. Minor wording edits should not appear here.",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["section", "recommendation", "reason", "impact"],
+            properties: {
+              section: { type: "string" },
+              recommendation: { type: "string" },
+              reason: { type: "string" },
+              impact: { type: "string" }
+            }
+          },
+          minItems: 1,
+          maxItems: 8
+        },
+        experienceToSupplement: {
+          type: "array",
+          description: "Important JD requirements that are missing or thin in the resume, with realistic suggestions the candidate can confirm or edit.",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["jdNeed", "currentGap", "suggestedEvidence", "safeWording"],
+            properties: {
+              jdNeed: { type: "string" },
+              currentGap: { type: "string" },
+              suggestedEvidence: { type: "string" },
+              safeWording: { type: "string" }
+            }
+          },
+          minItems: 1,
+          maxItems: 8
+        },
+        skillUpdates: {
+          type: "array",
+          description: "Skills to add, reframe, or remove based on the JD and existing resume evidence.",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["action", "skill", "reason"],
+            properties: {
+              action: { type: "string", enum: ["add", "reframe", "remove", "keep"] },
+              skill: { type: "string" },
+              reason: { type: "string" }
+            }
+          },
+          minItems: 1,
+          maxItems: 12
+        }
+      }
     },
     truthCheckNotes: {
       type: "array",
@@ -153,6 +211,8 @@ export default async function handler(req, res) {
             "Do not fabricate employers, dates, degrees, certifications, tools, metrics, domain experience, visas, or years of experience.",
             "You may rewrite, compress, merge, reorder, and sharpen existing content. You may add professional framing only when it is a reasonable inference from the resume.",
             "If the JD asks for a requirement the candidate does not appear to meet, do not pretend they meet it. Add it to truthCheckNotes/gaps and position adjacent strengths.",
+            "Create a review section for the user before final download: major structure changes, realistic experience to supplement, and skills updates. Minor wording changes do not need review.",
+            "For adjacent tools, be reasonable but not dishonest: if the resume shows Visio, Power Automate, Copilot, Excel, Power Query, Jira, or Tableau, you may suggest adjacent workflow, visualization, automation, or collaboration tools only as 'can position as' or 'confirm if used', not as proven experience.",
             "Keep the resume concise enough for one page. Prioritize the most relevant experience and remove weaker unrelated details.",
             "Use strong, specific, professional English suitable for Canadian/North American job applications.",
             "Return only JSON matching the provided schema."
@@ -173,6 +233,8 @@ export default async function handler(req, res) {
               "Preserve the candidate's real timeline and combined experience level.",
               "Write coverLetter as a complete letter.",
               "Answer each application question if provided.",
+              "Before the final draft, provide review recommendations for: 1) what to delete/merge/shorten/reorder, 2) what experience evidence the user should supplement because the JD needs it, 3) skills to add/reframe/remove.",
+              "Use safeWording for suggested supplemental content that is plausible from the resume but should be user-confirmed before submission.",
               "For skills, group by useful categories such as Product & Strategy, Agile & Delivery, Data & Tools, Domain."
             ]
           })

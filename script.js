@@ -21,7 +21,12 @@ const fields = {
 let generated = {
   resumeText: "",
   coverText: "",
-  model: null
+  model: null,
+  approvals: {
+    structure: false,
+    evidence: false,
+    skills: false
+  }
 };
 
 const stopWords = new Set([
@@ -328,6 +333,7 @@ async function generate() {
     }
 
     generated.model = payload;
+    resetApprovals();
   } catch (error) {
     showToast(error.message || "AI generation failed. Check OPENAI_API_KEY.");
     return;
@@ -343,8 +349,10 @@ async function generate() {
   $("#letterOutput").classList.remove("empty");
   $("#resumeStatus").textContent = "Generated";
   $("#coverStatus").textContent = "Generated";
+  renderReview(generated.model.review);
+  updateApprovalState();
   switchView("documents");
-  showToast("AI tailored documents generated. You can download Word files now.");
+  showToast("AI strategy generated. Please approve the review sections before downloading.");
 }
 
 function setGenerating(isGenerating) {
@@ -371,6 +379,11 @@ function fileSafeName(value) {
 async function downloadResumeDoc() {
   if (!generated.model) await generate();
   if (!generated.model) return;
+  if (!isApproved()) {
+    showToast("Please approve the three review sections before downloading.");
+    switchView("documents");
+    return;
+  }
   const name = fileSafeName(`${generated.model.candidateName}_${fields.company.value || "Company"}_${fields.role.value || "Role"}_CV`);
   await downloadDocxResume(generated.model, `${name}.docx`);
 }
@@ -378,6 +391,11 @@ async function downloadResumeDoc() {
 async function downloadCoverDoc() {
   if (!generated.model) await generate();
   if (!generated.model) return;
+  if (!isApproved()) {
+    showToast("Please approve the three review sections before downloading.");
+    switchView("documents");
+    return;
+  }
   const name = fileSafeName(`${generated.model.candidateName}_${fields.company.value || "Company"}_${fields.role.value || "Role"}_Cover_Letter`);
   await downloadDocxCover(generated.model, generated.coverText, `${name}.docx`);
 }
@@ -495,6 +513,61 @@ function switchView(view) {
   $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === view));
 }
 
+function renderReview(review) {
+  renderReviewList("#structureReview", review?.structureChanges || [], (item) => `
+    <span class="review-tag">${escapeHtml(item.section)}</span>
+    <strong>${escapeHtml(item.recommendation)}</strong>
+    <p>${escapeHtml(item.reason)}</p>
+    <p>${escapeHtml(item.impact)}</p>
+  `);
+
+  renderReviewList("#evidenceReview", review?.experienceToSupplement || [], (item) => `
+    <span class="review-tag">${escapeHtml(item.jdNeed)}</span>
+    <strong>${escapeHtml(item.currentGap)}</strong>
+    <p>${escapeHtml(item.suggestedEvidence)}</p>
+    <p>${escapeHtml(item.safeWording)}</p>
+  `);
+
+  renderReviewList("#skillsReview", review?.skillUpdates || [], (item) => `
+    <span class="review-tag">${escapeHtml(item.action)}</span>
+    <strong>${escapeHtml(item.skill)}</strong>
+    <p>${escapeHtml(item.reason)}</p>
+  `);
+}
+
+function renderReviewList(selector, items, template) {
+  const node = $(selector);
+  if (!items.length) {
+    node.classList.add("empty");
+    node.textContent = "No major changes recommended.";
+    return;
+  }
+  node.classList.remove("empty");
+  node.innerHTML = items.map((item) => `<div class="review-item">${template(item)}</div>`).join("");
+}
+
+function resetApprovals() {
+  generated.approvals = { structure: false, evidence: false, skills: false };
+  $$(".approve-button").forEach((button) => {
+    button.classList.remove("approved");
+    button.textContent = "Approve";
+  });
+}
+
+function isApproved() {
+  return generated.approvals.structure && generated.approvals.evidence && generated.approvals.skills;
+}
+
+function updateApprovalState() {
+  const ready = isApproved();
+  $("#downloadResumeBtn").disabled = !ready;
+  $("#downloadCoverBtn").disabled = !ready;
+  $("#approvalBanner").classList.toggle("ready", ready);
+  $("#approvalBanner").textContent = ready
+    ? "Review approved. Final Word documents are unlocked."
+    : "Approve the three review sections to unlock the final downloadable documents.";
+}
+
 function showToast(message) {
   const toast = $("#toast");
   toast.textContent = message;
@@ -510,6 +583,16 @@ $("#downloadResumeBtn").addEventListener("click", downloadResumeDoc);
 $("#downloadCoverBtn").addEventListener("click", downloadCoverDoc);
 $("#resumeFile").addEventListener("change", (event) => handleResumeUpload(event.target.files?.[0]));
 
+$$(".approve-button").forEach((button) => {
+  button.addEventListener("click", () => {
+    const key = button.dataset.approve;
+    generated.approvals[key] = !generated.approvals[key];
+    button.classList.toggle("approved", generated.approvals[key]);
+    button.textContent = generated.approvals[key] ? "Approved" : "Approve";
+    updateApprovalState();
+  });
+});
+
 $$(".nav-item").forEach((button) => {
   button.addEventListener("click", () => switchView(button.dataset.view));
 });
@@ -520,6 +603,7 @@ document.addEventListener("DOMContentLoaded", () => {
     showApp();
   }
   lucide.createIcons();
+  updateApprovalState();
 });
 
 window.ClarityCV = {

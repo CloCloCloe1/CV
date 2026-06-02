@@ -8,6 +8,8 @@ Users can:
 - Save a reusable resume profile
 - Upload or paste resume content
 - Enter a target company, role, and job description
+- Generate a tailored strategy review first
+- Approve major structure edits, evidence gaps, and skills updates
 - Generate a tailored one-page CV
 - Download the CV and cover letter as Word `.docx` documents
 

@@ -58,7 +58,7 @@
           </button>
           <button class="nav-item" type="button" data-view="documents">
             <i data-lucide="file-down"></i>
-            <span>Documents</span>
+            <span>Review & Documents</span>
           </button>
         </nav>
 
@@ -158,9 +158,9 @@
         <section class="view" id="documentsView">
           <header class="page-head">
             <div>
-              <p class="eyebrow">Ready to submit</p>
-              <h1>Download Word documents</h1>
-              <p>生成后可以下载一页 CV，也可以下载 cover letter。所有内容仍建议投递前做最后人工检查。</p>
+              <p class="eyebrow">Review first</p>
+              <h1>Approve the strategy, then download</h1>
+              <p>Small wording edits are applied automatically. Major changes, missing evidence, and skills updates are shown first so you can approve or revise before using the final CV.</p>
             </div>
             <div class="download-actions">
               <button class="primary-button" id="downloadResumeBtn" type="button">
@@ -173,6 +173,36 @@
               </button>
             </div>
           </header>
+
+          <div class="review-grid" id="reviewGrid">
+            <article class="review-card">
+              <div class="review-card-head">
+                <h2>Structure edits</h2>
+                <button class="approve-button" type="button" data-approve="structure">Approve</button>
+              </div>
+              <div id="structureReview" class="review-list empty">Generate a role package to see merge, shorten, delete, and reorder recommendations.</div>
+            </article>
+
+            <article class="review-card">
+              <div class="review-card-head">
+                <h2>Evidence to supplement</h2>
+                <button class="approve-button" type="button" data-approve="evidence">Approve</button>
+              </div>
+              <div id="evidenceReview" class="review-list empty">Important JD gaps and safe suggested wording will appear here.</div>
+            </article>
+
+            <article class="review-card">
+              <div class="review-card-head">
+                <h2>Skills updates</h2>
+                <button class="approve-button" type="button" data-approve="skills">Approve</button>
+              </div>
+              <div id="skillsReview" class="review-list empty">Skills to add, reframe, keep, or remove will appear here.</div>
+            </article>
+          </div>
+
+          <div class="approval-banner" id="approvalBanner">
+            Approve the three review sections to unlock the final downloadable documents.
+          </div>
 
           <div class="document-grid">
             <article class="preview-panel">
